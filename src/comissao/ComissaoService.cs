@@ -1,63 +1,44 @@
 using System.Text.Json;
 
-namespace Comissao
+namespace DesafioTarget.Comissao
 {
     public class ComissaoService
     {
-        private const decimal TAXA_1 = 0.01m;
-        private const decimal TAXA_2 = 0.05m;
+        private readonly string _caminhoJson;
 
-        /// <summary>
-        /// Lê o JSON e retorna lista de vendas.
-        /// </summary>
-        public List<Venda> LerVendas(string caminhoArquivo)
+        public ComissaoService(string caminhoJson)
         {
-            if (!File.Exists(caminhoArquivo))
-                throw new FileNotFoundException("Arquivo de vendas não encontrado.", caminhoArquivo);
-
-            string json = File.ReadAllText(caminhoArquivo);
-
-            var root = JsonSerializer.Deserialize<VendasRoot>(json);
-
-            return root?.Vendas ?? new List<Venda>();
+            _caminhoJson = caminhoJson;
         }
 
-        /// <summary>
-        /// Calcula a comissão de uma única venda.
-        /// </summary>
-        public decimal CalcularComissao(decimal valor)
+        public List<VendedorTotal> CalcularComissoes()
         {
-            if (valor < 100) return 0;
-            if (valor < 500) return valor * TAXA_1;
-            return valor * TAXA_2;
-        }
+            var json = File.ReadAllText(_caminhoJson);
 
-        /// <summary>
-        /// Gera o total de comissão por vendedor.
-        /// </summary>
-        public List<VendedorTotal> CalcularTotaisPorVendedor(List<Venda> vendas)
-        {
-            var vendedores = new Dictionary<string, VendedorTotal>();
+            var wrapper = JsonSerializer.Deserialize<VendasWrapper>(json);
+
+            var vendas = wrapper?.Vendas ?? new List<Venda>();
+
+            var totais = new Dictionary<string, VendedorTotal>();
 
             foreach (var venda in vendas)
             {
-                if (!vendedores.ContainsKey(venda.Vendedor))
-                    vendedores[venda.Vendedor] = new VendedorTotal(venda.Vendedor);
+                decimal comissao = venda.Valor switch
+                {
+                    < 100m => 0,
+                    < 500m => venda.Valor * 0.01m,
+                    _ => venda.Valor * 0.05m
+                };
 
-                decimal comissao = CalcularComissao(venda.Valor);
+                if (!totais.ContainsKey(venda.Vendedor))
+                    totais[venda.Vendedor] = new VendedorTotal(venda.Vendedor);
 
-                vendedores[venda.Vendedor].AdicionarVenda(venda.Valor, comissao);
+                totais[venda.Vendedor].SomaVendas += venda.Valor;
+                totais[venda.Vendedor].TotalComissao += comissao;
+                totais[venda.Vendedor].QuantidadeVendas++;
             }
 
-            return vendedores.Values.ToList();
+            return totais.Values.ToList();
         }
-    }
-
-    /// <summary>
-    /// Modelo auxiliar para deserializar JSON exatamente como enviado.
-    /// </summary>
-    public class VendasRoot
-    {
-        public List<Venda> Vendas { get; set; } = new List<Venda>();
     }
 }
