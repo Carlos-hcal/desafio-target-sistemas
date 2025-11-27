@@ -1,0 +1,2 @@
+# desafio-target-sistemas
+Este projeto foi desenvolvido como solução para um desafio técnico envolvendo cálculo de comissões, controle de estoque e cálculo de juros sobre atraso de pagamento, utilizando linguagem C# (.NET) e leitura de dados a partir de arquivos JSON.  A aplicação é totalmente modularizada, separando modelos, serviços e dados para garantir boa organização, facilidade de manutenção e escalabilidade.
